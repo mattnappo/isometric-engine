@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	_ "image/png"
 	"math"
@@ -129,6 +130,8 @@ func run() {
 				}
 			}
 		}
+
+		fmt.Printf("selected: %d, %d\n", screenSpaceCell.x, screenSpaceCell.y)
 
 		imd := imdraw.New(nil)           // Initialize the mesh
 		imd.Color = pixel.RGB(255, 0, 0) // Red

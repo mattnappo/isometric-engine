@@ -1,5 +1,6 @@
 # - RANDOM STUIFF - #
 *.swp
+*.c
 
 # Binaries for programs and plugins
 *.exe
