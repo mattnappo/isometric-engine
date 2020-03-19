@@ -11,6 +11,7 @@ import (
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
+	"github.com/golang/geo/r2"
 	"golang.org/x/image/colornames"
 	"golang.org/x/image/font/basicfont"
 )
@@ -139,7 +140,7 @@ func run() {
 			}
 		}
 
-		fmt.Printf("selected: %d, %d\n", cellSpaceCell.x, cellSpaceCell.y)
+		// fmt.Printf("selected: %d, %d\n", cellSpaceCell.x, cellSpaceCell.y)
 
 		imd := imdraw.New(nil)           // Initialize the mesh
 		imd.Color = pixel.RGB(255, 0, 0) // Red
@@ -154,7 +155,53 @@ func run() {
 		imd.Push(pixel.V(xpos, ypos))
 		imd.Line(1) // Make the polygon*/
 
-		imd.Draw(win) // Draw the mesh to the window
+		// Calculate where the point is in relation to the border
+		tx := float64(tileSize.x)
+		ty := float64(tileSize.y)
+		P := r2.Point{mouseVec.X, mouseVec.Y}
+		O := r2.Point{float64(cellSpaceCell.x) * tx, float64(cellSpaceCell.y) * ty}
+		A := r2.Point{
+			O.X + tx/2,
+			O.Y,
+		}
+		B := r2.Point{
+			O.X,
+			O.Y + ty/2,
+		}
+		C := r2.Point{
+			O.X + tx/2,
+			O.Y + ty,
+		}
+		D := r2.Point{
+			O.X + tx,
+			O.Y + ty/2,
+		}
+
+		dAB := (A.Add(B)).Cross(A.Add(P)) // AB cross AP
+		dBC := (B.Add(C)).Cross(B.Add(P)) // BC cross BP
+		dCD := (C.Add(D)).Cross(C.Add(P)) // CD cross CP
+		dDA := (D.Add(A)).Cross(D.Add(P)) // DA cross DP
+		fmt.Printf("dAB: %f\ndBC: %f\ndCD: %f\ndDA: %f\n\n", dAB, dBC, dCD, dDA)
+		// Change the cellSpaceCell accordingly
+		/*if dAB < 0 {
+			fmt.Println("BOTTOM LEFT")
+		}
+		if dBC > 0 {
+			fmt.Println("TOP LEFT")
+		}
+		if dCD > 0 {
+			fmt.Println("TOP RIGHT")
+		}
+		if dDA < 0 {
+			fmt.Println("BOTTOM RIGHT")
+		}*/
+		if dAB > 0 && dBC < 0 && dCD < 0 && dDA > 0 {
+			fmt.Println(" -- CENTER -- ")
+		}
+
+		imd.Push(pixel.V(O.X, O.Y))
+		imd.Circle(10, 1)
+		imd.Draw(win)
 
 		selectedTile.Draw(win, pixel.IM.Moved(
 			pointToScreenSpace(cellSpaceCell.x, cellSpaceCell.y),
