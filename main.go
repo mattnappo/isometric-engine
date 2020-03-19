@@ -122,11 +122,14 @@ func run() {
 		imd.Color = pixel.RGB(255, 0, 0) // Red
 
 		// Square vertices
-		imd.Push(pixel.V(1, 1))
-		imd.Push(pixel.V(1, 2))
-		imd.Push(pixel.V(2, 1))
-		imd.Push(pixel.V(2, 2))
-		imd.Polygon(0) // Make the polygon
+		xpos := float64(currentCell.x * tileSize.x)
+		ypos := float64(currentCell.y * tileSize.y)
+		imd.Push(pixel.V(xpos, ypos))
+		imd.Push(pixel.V(xpos+float64(tileSize.x), ypos))
+		imd.Push(pixel.V(xpos+float64(tileSize.x), ypos+float64(tileSize.y)))
+		imd.Push(pixel.V(xpos, ypos+float64(tileSize.y)))
+		imd.Push(pixel.V(xpos, ypos))
+		imd.Line(1) // Make the polygon
 
 		imd.Draw(win) // Draw the mesh to the window
 
