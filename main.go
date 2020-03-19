@@ -42,6 +42,13 @@ func loadPicture(path string) (pixel.Picture, error) {
 	return pixel.PictureDataFromImage(img), nil
 }
 
+func toScreenSpace(x, y int) pixel.Vec {
+	return pixel.V(
+		(origin.x*tileSize.x)+(x-y)*(tileSize.x/2),
+		(origin.y*tileSize.y)+(x+y)*(tileSize.y/2),
+	)
+}
+
 func run() {
 	// Create the window config
 	cfg := pixelgl.WindowConfig{
@@ -62,7 +69,10 @@ func run() {
 	}
 	blankTile := pixel.NewSprite(rawBlankTile, rawBlankTile.Bounds())
 
-	// Initialize the world map
+	// Initialize the world map to blank tiles
+	for _, tile := range world {
+		tile = blank
+	}
 
 	// Clear the screen
 	win.Clear(colornames.White)
@@ -71,13 +81,15 @@ func run() {
 	for y := 0; y < worldSize.y; y++ {
 		for x := 0; x < worldSize.x; x++ {
 			// Give 2d coord of where to draw tile onto screen
-			screenspace := toScreenSpace(x, y)
-
+			screenVec := toScreenSpace(x, y) // Transform the coord to screen space
+			switch world {
+			case blank:
+				// Draw the blank tile sprite in the middle of the window
+				blankTile.Draw(win, pixel.IM.Moved(screenVec))
+				break
+			}
 		}
 	}
-
-	// Draw the blank tile sprite in the middle of the window
-	// blankTile.Draw(win, pixel.IM.Moved(win.Bounds().Center()))
 
 	// Update the window while it is still open
 	for !win.Closed() {
