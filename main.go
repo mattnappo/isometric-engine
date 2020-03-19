@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	_ "image/png"
 	"os"
 
 	"github.com/faiface/pixel"
+	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
 	"golang.org/x/image/colornames"
 )
@@ -85,26 +87,50 @@ func run() {
 		}
 	}
 
-	// Clear the screen
-	win.Clear(colornames.White)
+	// Main loop
+	for !win.Closed() {
+		// Clear the screen
+		win.Clear(colornames.White)
 
-	// Render all of the tiles, y first to add depth
-	for y := 0; y < worldSize.y; y++ {
-		for x := 0; x < worldSize.x; x++ {
-			// Give 2d coord of where to draw tile onto screen
-			screenVec := toScreenSpace(x, y) // Transform the coord to screen space
-			switch world[x][y] {
-			case blank:
-				// Draw the blank tile sprite in the middle of the window
-				blankTile.Draw(win, pixel.IM.Moved(screenVec))
-				break
+		mouseVec := win.MousePosition() // Get the position of the mouse
+		currentCell := vec2d{
+			int(mouseVec.X) / tileSize.x, // x position
+			int(mouseVec.Y) / tileSize.y, // y position
+		}
+		cellOffset := vec2d{
+			int(mouseVec.X) % tileSize.x, // x offset
+			int(mouseVec.Y) % tileSize.y, // y offset
+		}
+
+		fmt.Printf("%v%v", currentCell, cellOffset)
+
+		// Render all of the tiles, y first to add depth
+		for y := 0; y < worldSize.y; y++ {
+			for x := 0; x < worldSize.x; x++ {
+				// Give 2d coord of where to draw tile onto screen
+				screenVec := toScreenSpace(x, y) // Transform to screen space
+				switch world[x][y] {
+				case blank:
+					// Draw the blank tile sprite in the middle of the window
+					blankTile.Draw(win, pixel.IM.Moved(screenVec))
+					break
+				}
 			}
 		}
-	}
 
-	// Update the window while it is still open
-	for !win.Closed() {
-		win.Update()
+		imd := imdraw.New(nil)           // Initialize the mesh
+		imd.Color = pixel.RGB(255, 0, 0) // Red
+
+		// Square vertices
+		imd.Push(pixel.V(1, 1))
+		imd.Push(pixel.V(1, 2))
+		imd.Push(pixel.V(2, 1))
+		imd.Push(pixel.V(2, 2))
+		imd.Polygon(0) // Make the polygon
+
+		imd.Draw(win) // Draw the mesh to the window
+
+		win.Update() // Update the window
 	}
 }
 
