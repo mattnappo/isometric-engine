@@ -82,11 +82,11 @@ func run() {
 	}
 
 	// Initialize the sprites (going to implement a spritesheet soon!)
-	rawBlankTile, err := loadPicture("resources/tiles/debug_blank.png")
+	rawBlankTile, err := loadPicture("resources/tiles/blank.png")
 	if err != nil {
 		panic(err)
 	}
-	rawSelectedTile, err := loadPicture("resources/tiles/debug_selected.png")
+	rawSelectedTile, err := loadPicture("resources/tiles/selected.png")
 
 	if err != nil {
 		panic(err)
@@ -112,7 +112,7 @@ func run() {
 		win.Clear(colornames.White)
 
 		mouseVec := win.MousePosition() // Get the position of the mouse
-		screenSpaceCell := vec2d{
+		boardSpaceCell := vec2d{
 			int(math.Floor(mouseVec.X / float64(tileSize.x))), // x position
 			int(math.Floor(mouseVec.Y / float64(tileSize.y))), // y position
 		}
@@ -122,8 +122,8 @@ func run() {
 		}
 		// Map the cell coords in screen space to those in cell space
 		cellSpaceCell := vec2d{
-			(screenSpaceCell.y - origin.y) + (screenSpaceCell.x - origin.x),
-			(screenSpaceCell.y - origin.y) - (screenSpaceCell.x - origin.x),
+			(boardSpaceCell.y - origin.y) + (boardSpaceCell.x - origin.x),
+			(boardSpaceCell.y - origin.y) - (boardSpaceCell.x - origin.x),
 		}
 
 		// Render all of the tiles, y first to add depth
@@ -146,8 +146,8 @@ func run() {
 		imd.Color = pixel.RGB(255, 0, 0) // Red
 
 		/*// Square vertices (the square is "wrong" now, but that's fine)
-		xpos := float64(screenSpaceCell.x*tileSize.x) - float64(tileSize.x/2)
-		ypos := float64(screenSpaceCell.y*tileSize.y) - float64(tileSize.y/2)
+		xpos := float64(boardSpaceCell.x*tileSize.x) - float64(tileSize.x/2)
+		ypos := float64(boardSpaceCell.y*tileSize.y) - float64(tileSize.y/2)
 		imd.Push(pixel.V(xpos, ypos))
 		imd.Push(pixel.V(xpos+float64(tileSize.x), ypos))
 		imd.Push(pixel.V(xpos+float64(tileSize.x), ypos+float64(tileSize.y)))
@@ -159,7 +159,7 @@ func run() {
 		tx := float64(tileSize.x)
 		ty := float64(tileSize.y)
 		P := r2.Point{mouseVec.X, mouseVec.Y}
-		O := r2.Point{float64(cellSpaceCell.x) * tx, float64(cellSpaceCell.y) * ty}
+		O := r2.Point{float64(boardSpaceCell.x) * tx, float64(boardSpaceCell.y) * ty}
 		A := r2.Point{
 			O.X + tx/2,
 			O.Y,
@@ -177,29 +177,32 @@ func run() {
 			O.Y + ty/2,
 		}
 
-		dAB := (A.Add(B)).Cross(A.Add(P)) // AB cross AP
-		dBC := (B.Add(C)).Cross(B.Add(P)) // BC cross BP
-		dCD := (C.Add(D)).Cross(C.Add(P)) // CD cross CP
-		dDA := (D.Add(A)).Cross(D.Add(P)) // DA cross DP
+		dAB := (P.X-A.X)*(B.Y-A.Y) - (P.Y-A.Y)*(B.X-A.X)
+		dBC := (P.X-B.X)*(C.Y-B.Y) - (P.Y-B.Y)*(C.X-B.X)
+		dCD := (P.X-C.X)*(D.Y-C.Y) - (P.Y-C.Y)*(D.X-C.X)
+		dDA := (P.X-D.X)*(A.Y-D.Y) - (P.Y-D.Y)*(A.X-D.X)
+
 		fmt.Printf("dAB: %f\ndBC: %f\ndCD: %f\ndDA: %f\n\n", dAB, dBC, dCD, dDA)
 		// Change the cellSpaceCell accordingly
-		/*if dAB < 0 {
+		if dAB < 0 { // Bottom left
 			fmt.Println("BOTTOM LEFT")
-		}
-		if dBC > 0 {
+		} else if dBC > 0 { // Top left
 			fmt.Println("TOP LEFT")
-		}
-		if dCD > 0 {
+		} else if dCD > 0 { // Top right
 			fmt.Println("TOP RIGHT")
-		}
-		if dDA < 0 {
+		} else if dDA < 0 { // Bottom right
 			fmt.Println("BOTTOM RIGHT")
-		}*/
-		if dAB > 0 && dBC < 0 && dCD < 0 && dDA > 0 {
+		} else { // Center
 			fmt.Println(" -- CENTER -- ")
 		}
 
-		imd.Push(pixel.V(O.X, O.Y))
+		imd.Push(pixel.V(A.X, A.Y))
+		imd.Circle(10, 1)
+		imd.Push(pixel.V(B.X, B.Y))
+		imd.Circle(10, 1)
+		imd.Push(pixel.V(C.X, C.Y))
+		imd.Circle(10, 1)
+		imd.Push(pixel.V(D.X, D.Y))
 		imd.Circle(10, 1)
 		imd.Draw(win)
 
