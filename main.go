@@ -10,10 +10,8 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
-	"github.com/faiface/pixel/text"
 	"github.com/golang/geo/r2"
 	"golang.org/x/image/colornames"
-	"golang.org/x/image/font/basicfont"
 )
 
 type vec2d struct {
@@ -30,6 +28,12 @@ type tileType int
 const (
 	blank tileType = iota
 	grass tileType = iota
+	stone tileType = iota
+
+	stoneEdgeN tileType = iota
+	stoneEdgeE tileType = iota
+	stoneEdgeS tileType = iota
+	stoneEdgeW tileType = iota
 )
 
 const (
@@ -39,7 +43,7 @@ const (
 
 var (
 	worldSize = vec2d{worldSizeX, worldSizeY}
-	tileSize  = vec2d{80, 40}
+	tileSize  = vec2d{63, 32}
 	origin    = vec2d{5, 1}
 	world     [worldSizeX][worldSizeY]tileType
 )
@@ -71,8 +75,13 @@ func pointToScreenSpace(x, y int) pixel.Vec {
 func run() {
 	// Create the window config
 	cfg := pixelgl.WindowConfig{
-		Title:  "@xoreo isometric-engine",
-		Bounds: pixel.R(0, 0, float64((worldSize.x+2)*tileSize.x), 700),
+		Title: "@xoreo isometric-engine",
+		Bounds: pixel.R(
+			0,
+			0,
+			float64((worldSize.x+2)*tileSize.x),
+			float64((worldSize.y)*tileSize.x),
+		),
 	}
 
 	// Create the window itself
@@ -81,30 +90,23 @@ func run() {
 		panic(err)
 	}
 
-	// Initialize the sprites (going to implement a spritesheet soon!)
-	rawBlankTile, err := loadPicture("resources/tiles/blank.png")
+	// Initialize the sprites
+	spriteSheet, err := loadPicture("resources/spritesheet.png")
 	if err != nil {
 		panic(err)
 	}
-	rawSelectedTile, err := loadPicture("resources/tiles/selected.png")
 
-	if err != nil {
-		panic(err)
-	}
-	blankTile := pixel.NewSprite(rawBlankTile, rawBlankTile.Bounds())
-	selectedTile := pixel.NewSprite(rawSelectedTile, rawSelectedTile.Bounds())
+	var tileSprites [6]*pixel.Sprite
+
+	tileSprites[grass] = pixel.NewSprite(spriteSheet, pixel.R(257, 67, tileSize.x, tileSize.y))
+	tileSprites[stone] = pixel.NewSprite(spriteSheet, pixel.R(1, 34, tileSize.x, tileSize.y))
 
 	// Initialize the world map to blank tiles
 	for y, _ := range world {
 		for x, _ := range world[y] {
-			world[y][x] = blank
+			world[y][x] = grass
 		}
 	}
-
-	// Initialize text rendering
-	atlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
-	text := text.New(pixel.V(200, float64(worldSize.y-200)), atlas)
-	fmt.Fprintln(text, "SOME TEXT!")
 
 	// Main loop
 	for !win.Closed() {
@@ -132,30 +134,18 @@ func run() {
 				// Give 2d coord of where to draw tile onto screen
 				screenVec := pointToScreenSpace(x, y) // Transform to screen space
 				switch world[x][y] {
-				case blank:
-					// Draw the blank tile sprite in the middle of the window
-					blankTile.Draw(win, pixel.IM.Moved(screenVec))
+				case grass:
+					// Draw the grass tile sprite
+					tileSprites[grass].Draw(win, pixel.IM.Moved(screenVec))
 					break
 				}
 			}
 		}
 
-		// fmt.Printf("selected: %d, %d\n", cellSpaceCell.x, cellSpaceCell.y)
-
 		imd := imdraw.New(nil)           // Initialize the mesh
 		imd.Color = pixel.RGB(255, 0, 0) // Red
 
-		/*// Square vertices (the square is "wrong" now, but that's fine)
-		xpos := float64(boardSpaceCell.x*tileSize.x) - float64(tileSize.x/2)
-		ypos := float64(boardSpaceCell.y*tileSize.y) - float64(tileSize.y/2)
-		imd.Push(pixel.V(xpos, ypos))
-		imd.Push(pixel.V(xpos+float64(tileSize.x), ypos))
-		imd.Push(pixel.V(xpos+float64(tileSize.x), ypos+float64(tileSize.y)))
-		imd.Push(pixel.V(xpos, ypos+float64(tileSize.y)))
-		imd.Push(pixel.V(xpos, ypos))
-		imd.Line(1) // Make the polygon*/
-
-		// Calculate where the point is in relation to the border
+		// Calculate where the point is in relation to the border of the tile
 		tx := float64(tileSize.x)
 		ty := float64(tileSize.y)
 		P := r2.Point{mouseVec.X, mouseVec.Y}
@@ -177,12 +167,13 @@ func run() {
 			O.Y + ty/2,
 		}
 
+		// Calculate the cross products
 		dAB := (P.X-A.X)*(B.Y-A.Y) - (P.Y-A.Y)*(B.X-A.X)
 		dBC := (P.X-B.X)*(C.Y-B.Y) - (P.Y-B.Y)*(C.X-B.X)
 		dCD := (P.X-C.X)*(D.Y-C.Y) - (P.Y-C.Y)*(D.X-C.X)
 		dDA := (P.X-D.X)*(A.Y-D.Y) - (P.Y-D.Y)*(A.X-D.X)
-
 		fmt.Printf("dAB: %f\ndBC: %f\ndCD: %f\ndDA: %f\n\n", dAB, dBC, dCD, dDA)
+
 		// Change the cellSpaceCell accordingly
 		if dAB < 0 { // Bottom left
 			cellSpaceCell.x -= 1
@@ -202,7 +193,7 @@ func run() {
 				)) // Draw the highlighted sprite on the cell
 			}
 		}
-		text.Draw(win, pixel.IM.Scaled(text.Orig, 10))
+
 		win.Update() // Update the window
 	}
 }
