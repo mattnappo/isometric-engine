@@ -192,14 +192,16 @@ func run() {
 			cellSpaceCell.x += 1
 		} else if dDA < 0 { // Bottom right
 			cellSpaceCell.y -= 1
-		} else { // Center
-
 		}
 
-		selectedTile.Draw(win, pixel.IM.Moved(
-			pointToScreenSpace(cellSpaceCell.x, cellSpaceCell.y),
-		)) // Draw the highlighted sprite on the cell
-
+		// Check that the cell is within the board
+		if cellSpaceCell.x >= 0 && cellSpaceCell.x < worldSize.x { // Check x bounds
+			if cellSpaceCell.y >= 0 && cellSpaceCell.y < worldSize.y { // Check y bounds
+				selectedTile.Draw(win, pixel.IM.Moved(
+					pointToScreenSpace(cellSpaceCell.x, cellSpaceCell.y),
+				)) // Draw the highlighted sprite on the cell
+			}
+		}
 		text.Draw(win, pixel.IM.Scaled(text.Orig, 10))
 		win.Update() // Update the window
 	}
