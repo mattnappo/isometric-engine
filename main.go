@@ -81,11 +81,12 @@ func run() {
 	}
 
 	// Initialize the sprites (going to implement a spritesheet soon!)
-	rawBlankTile, err := loadPicture("resources/tiles/blank.png")
+	rawBlankTile, err := loadPicture("resources/tiles/debug_blank.png")
 	if err != nil {
 		panic(err)
 	}
-	rawSelectedTile, err := loadPicture("resources/tiles/selected.png")
+	rawSelectedTile, err := loadPicture("resources/tiles/debug_selected.png")
+
 	if err != nil {
 		panic(err)
 	}
@@ -138,12 +139,12 @@ func run() {
 			}
 		}
 
-		fmt.Printf("selected: %d, %d\n", screenSpaceCell.x, screenSpaceCell.y)
+		fmt.Printf("selected: %d, %d\n", cellSpaceCell.x, cellSpaceCell.y)
 
 		imd := imdraw.New(nil)           // Initialize the mesh
 		imd.Color = pixel.RGB(255, 0, 0) // Red
 
-		// Square vertices (the square is "wrong" now, but that's fine)
+		/*// Square vertices (the square is "wrong" now, but that's fine)
 		xpos := float64(screenSpaceCell.x*tileSize.x) - float64(tileSize.x/2)
 		ypos := float64(screenSpaceCell.y*tileSize.y) - float64(tileSize.y/2)
 		imd.Push(pixel.V(xpos, ypos))
@@ -151,12 +152,7 @@ func run() {
 		imd.Push(pixel.V(xpos+float64(tileSize.x), ypos+float64(tileSize.y)))
 		imd.Push(pixel.V(xpos, ypos+float64(tileSize.y)))
 		imd.Push(pixel.V(xpos, ypos))
-		imd.Line(1) // Make the polygon
-
-		// The mouse itself
-		imd.Color = pixel.RGB(0, 255, 0)
-		imd.Push(mouseVec)
-		imd.Circle(10, 1)
+		imd.Line(1) // Make the polygon*/
 
 		imd.Draw(win) // Draw the mesh to the window
 
