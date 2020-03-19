@@ -23,17 +23,18 @@ const (
 )
 
 const (
-	worldSizeX = 14
+	worldSizeX = 10
 	worldSizeY = 10
 )
 
 var (
 	worldSize = vec2d{worldSizeX, worldSizeY}
 	tileSize  = vec2d{80, 40}
-	origin    = vec2d{5, 1}
+	origin    = vec2d{6, 1}
 	world     [worldSizeX][worldSizeY]tileType
 )
 
+// loadPicture loads a picture from memory and returns a pixel picture.
 func loadPicture(path string) (pixel.Picture, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -47,6 +48,8 @@ func loadPicture(path string) (pixel.Picture, error) {
 	return pixel.PictureDataFromImage(img), nil
 }
 
+// toScreenSpace takes coordinates from the world space and maps them to
+// coordinates in the virtual screen space.
 func toScreenSpace(x, y int) pixel.Vec {
 	return pixel.V(
 		float64(origin.x*tileSize.x+(x-y)*(tileSize.x/2)),
@@ -54,11 +57,12 @@ func toScreenSpace(x, y int) pixel.Vec {
 	)
 }
 
+// run is the main game function.
 func run() {
 	// Create the window config
 	cfg := pixelgl.WindowConfig{
 		Title:  "@xoreo isometric-engine",
-		Bounds: pixel.R(0, 0, 700, 700),
+		Bounds: pixel.R(0, 0, float64((worldSize.x+2)*tileSize.x), 700),
 	}
 
 	// Create the window itself
