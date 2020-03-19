@@ -10,7 +10,9 @@ import (
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/faiface/pixel/text"
 	"golang.org/x/image/colornames"
+	"golang.org/x/image/font/basicfont"
 )
 
 type vec2d struct {
@@ -59,8 +61,8 @@ func loadPicture(path string) (pixel.Picture, error) {
 // coordinates in the virtual screen space.
 func pointToScreenSpace(x, y int) pixel.Vec {
 	return pixel.V(
-		float64(origin.x*tileSize.x+(x-y)*(tileSize.x/2)),
-		float64(origin.y*tileSize.y+(x+y)*(tileSize.y/2)),
+		float64((origin.x*tileSize.x+(x-y)*(tileSize.x/2))+tileSize.x/2),
+		float64((origin.y*tileSize.y+(x+y)*(tileSize.y/2))+tileSize.y/2),
 	)
 }
 
@@ -96,6 +98,11 @@ func run() {
 			world[y][x] = blank
 		}
 	}
+
+	// Initialize text rendering
+	atlas := text.NewAtlas(basicfont.Face7x13, text.ASCII)
+	text := text.New(pixel.V(200, float64(worldSize.y-200)), atlas)
+	fmt.Fprintln(text, "SOME TEXT!")
 
 	// Main loop
 	for !win.Closed() {
@@ -136,7 +143,7 @@ func run() {
 		imd := imdraw.New(nil)           // Initialize the mesh
 		imd.Color = pixel.RGB(255, 0, 0) // Red
 
-		// Square vertices
+		// Square vertices (the square is "wrong" now, but that's fine)
 		xpos := float64(screenSpaceCell.x*tileSize.x) - float64(tileSize.x/2)
 		ypos := float64(screenSpaceCell.y*tileSize.y) - float64(tileSize.y/2)
 		imd.Push(pixel.V(xpos, ypos))
@@ -157,6 +164,7 @@ func run() {
 			pointToScreenSpace(cellSpaceCell.x, cellSpaceCell.y),
 		)) // Draw the highlighted sprite on the cell
 
+		text.Draw(win, pixel.IM.Scaled(text.Orig, 10))
 		win.Update() // Update the window
 	}
 }
