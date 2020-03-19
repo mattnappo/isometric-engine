@@ -22,11 +22,16 @@ const (
 	grass tileType = iota
 )
 
+const (
+	worldSizeX = 14
+	worldSizeY = 10
+)
+
 var (
-	worldSize = vec2d{14, 10}
+	worldSize = vec2d{worldSizeX, worldSizeY}
 	tileSize  = vec2d{80, 40}
 	origin    = vec2d{5, 1}
-	world     [worldSize.x * worldsize.y]tileType
+	world     [worldSizeX][worldSizeY]tileType
 )
 
 func loadPicture(path string) (pixel.Picture, error) {
@@ -44,8 +49,8 @@ func loadPicture(path string) (pixel.Picture, error) {
 
 func toScreenSpace(x, y int) pixel.Vec {
 	return pixel.V(
-		(origin.x*tileSize.x)+(x-y)*(tileSize.x/2),
-		(origin.y*tileSize.y)+(x+y)*(tileSize.y/2),
+		float64(origin.x*tileSize.x+(x-y)*(tileSize.x/2)),
+		float64(origin.y*tileSize.y+(x+y)*(tileSize.y/2)),
 	)
 }
 
@@ -70,8 +75,10 @@ func run() {
 	blankTile := pixel.NewSprite(rawBlankTile, rawBlankTile.Bounds())
 
 	// Initialize the world map to blank tiles
-	for _, tile := range world {
-		tile = blank
+	for y, _ := range world {
+		for x, _ := range world[y] {
+			world[y][x] = blank
+		}
 	}
 
 	// Clear the screen
@@ -82,7 +89,7 @@ func run() {
 		for x := 0; x < worldSize.x; x++ {
 			// Give 2d coord of where to draw tile onto screen
 			screenVec := toScreenSpace(x, y) // Transform the coord to screen space
-			switch world {
+			switch world[x][y] {
 			case blank:
 				// Draw the blank tile sprite in the middle of the window
 				blankTile.Draw(win, pixel.IM.Moved(screenVec))
