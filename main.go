@@ -185,26 +185,16 @@ func run() {
 		fmt.Printf("dAB: %f\ndBC: %f\ndCD: %f\ndDA: %f\n\n", dAB, dBC, dCD, dDA)
 		// Change the cellSpaceCell accordingly
 		if dAB < 0 { // Bottom left
-			fmt.Println("BOTTOM LEFT")
-		} else if dBC > 0 { // Top left
-			fmt.Println("TOP LEFT")
-		} else if dCD > 0 { // Top right
-			fmt.Println("TOP RIGHT")
+			cellSpaceCell.x -= 1
+		} else if dBC < 0 { // Top left
+			cellSpaceCell.y += 1
+		} else if dCD < 0 { // Top right
+			cellSpaceCell.x += 1
 		} else if dDA < 0 { // Bottom right
-			fmt.Println("BOTTOM RIGHT")
+			cellSpaceCell.y -= 1
 		} else { // Center
-			fmt.Println(" -- CENTER -- ")
-		}
 
-		imd.Push(pixel.V(A.X, A.Y))
-		imd.Circle(10, 1)
-		imd.Push(pixel.V(B.X, B.Y))
-		imd.Circle(10, 1)
-		imd.Push(pixel.V(C.X, C.Y))
-		imd.Circle(10, 1)
-		imd.Push(pixel.V(D.X, D.Y))
-		imd.Circle(10, 1)
-		imd.Draw(win)
+		}
 
 		selectedTile.Draw(win, pixel.IM.Moved(
 			pointToScreenSpace(cellSpaceCell.x, cellSpaceCell.y),
