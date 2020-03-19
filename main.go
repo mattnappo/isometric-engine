@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"image"
 	_ "image/png"
+	"math"
 	"os"
 
 	"github.com/faiface/pixel"
@@ -15,6 +15,10 @@ import (
 type vec2d struct {
 	x int
 	y int
+}
+type vec2df struct {
+	x float64
+	y float64
 }
 
 type tileType int
@@ -32,7 +36,7 @@ const (
 var (
 	worldSize = vec2d{worldSizeX, worldSizeY}
 	tileSize  = vec2d{80, 40}
-	origin    = vec2d{6, 1}
+	origin    = vec2d{5, 1}
 	world     [worldSizeX][worldSizeY]tileType
 )
 
@@ -50,9 +54,9 @@ func loadPicture(path string) (pixel.Picture, error) {
 	return pixel.PictureDataFromImage(img), nil
 }
 
-// toScreenSpace takes coordinates from the world space and maps them to
+// pointToScreenSpace takes coordinates from the world space and maps them to
 // coordinates in the virtual screen space.
-func toScreenSpace(x, y int) pixel.Vec {
+func pointToScreenSpace(x, y int) pixel.Vec {
 	return pixel.V(
 		float64(origin.x*tileSize.x+(x-y)*(tileSize.x/2)),
 		float64(origin.y*tileSize.y+(x+y)*(tileSize.y/2)),
@@ -73,12 +77,17 @@ func run() {
 		panic(err)
 	}
 
-	// Load the blank tile
+	// Initialize the sprites (going to implement a spritesheet soon!)
 	rawBlankTile, err := loadPicture("resources/tiles/blank.png")
 	if err != nil {
 		panic(err)
 	}
+	rawSelectedTile, err := loadPicture("resources/tiles/selected.png")
+	if err != nil {
+		panic(err)
+	}
 	blankTile := pixel.NewSprite(rawBlankTile, rawBlankTile.Bounds())
+	selectedTile := pixel.NewSprite(rawSelectedTile, rawSelectedTile.Bounds())
 
 	// Initialize the world map to blank tiles
 	for y, _ := range world {
@@ -93,22 +102,25 @@ func run() {
 		win.Clear(colornames.White)
 
 		mouseVec := win.MousePosition() // Get the position of the mouse
-		currentCell := vec2d{
-			int(mouseVec.X) / tileSize.x, // x position
-			int(mouseVec.Y) / tileSize.y, // y position
+		screenSpaceCell := vec2d{
+			int(math.Floor(mouseVec.X / float64(tileSize.x))), // x position
+			int(math.Floor(mouseVec.Y / float64(tileSize.y))), // y position
 		}
-		cellOffset := vec2d{
+		_ = vec2d{
 			int(mouseVec.X) % tileSize.x, // x offset
 			int(mouseVec.Y) % tileSize.y, // y offset
 		}
-
-		fmt.Printf("%v%v", currentCell, cellOffset)
+		// Map the cell coords in screen space to those in cell space
+		cellSpaceCell := vec2d{
+			(screenSpaceCell.y - origin.y) + (screenSpaceCell.x - origin.x),
+			(screenSpaceCell.y - origin.y) - (screenSpaceCell.x - origin.x),
+		}
 
 		// Render all of the tiles, y first to add depth
 		for y := 0; y < worldSize.y; y++ {
 			for x := 0; x < worldSize.x; x++ {
 				// Give 2d coord of where to draw tile onto screen
-				screenVec := toScreenSpace(x, y) // Transform to screen space
+				screenVec := pointToScreenSpace(x, y) // Transform to screen space
 				switch world[x][y] {
 				case blank:
 					// Draw the blank tile sprite in the middle of the window
@@ -122,8 +134,8 @@ func run() {
 		imd.Color = pixel.RGB(255, 0, 0) // Red
 
 		// Square vertices
-		xpos := float64(currentCell.x * tileSize.x)
-		ypos := float64(currentCell.y * tileSize.y)
+		xpos := float64(screenSpaceCell.x*tileSize.x) - float64(tileSize.x/2)
+		ypos := float64(screenSpaceCell.y*tileSize.y) - float64(tileSize.y/2)
 		imd.Push(pixel.V(xpos, ypos))
 		imd.Push(pixel.V(xpos+float64(tileSize.x), ypos))
 		imd.Push(pixel.V(xpos+float64(tileSize.x), ypos+float64(tileSize.y)))
@@ -131,7 +143,16 @@ func run() {
 		imd.Push(pixel.V(xpos, ypos))
 		imd.Line(1) // Make the polygon
 
+		// The mouse itself
+		imd.Color = pixel.RGB(0, 255, 0)
+		imd.Push(mouseVec)
+		imd.Circle(10, 1)
+
 		imd.Draw(win) // Draw the mesh to the window
+
+		selectedTile.Draw(win, pixel.IM.Moved(
+			pointToScreenSpace(cellSpaceCell.x, cellSpaceCell.y),
+		)) // Draw the highlighted sprite on the cell
 
 		win.Update() // Update the window
 	}
