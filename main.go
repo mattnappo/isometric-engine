@@ -121,8 +121,8 @@ func run() {
 		// Render all of the tiles, y first to add depth
 		for y := 0; y < worldSizeY; y++ {
 			for x := 0; x < worldSizeX; x++ {
-				// Give 2d coord of where to draw tile onto screen
-				screenVec := pointToScreenSpace(int(x), int(y)) // Transform to screen space
+				// Map to screen space
+				screenVec := pointToScreenSpace(float64(x), float64(y))
 				switch world[x][y] {
 				case grass:
 					// Draw the grass tile sprite
