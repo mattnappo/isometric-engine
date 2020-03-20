@@ -18,18 +18,20 @@ import (
 type tileType int
 
 const (
-	tileTypeCount = 10
+	tileTypeCount = 11
 
 	grass1     tileType = iota
 	grass2     tileType = iota
-	grass3     tileType = iota
 	stone      tileType = iota
 	selected   tileType = iota
 	stoneEdgeN tileType = iota
 	stoneEdgeE tileType = iota
 	stoneEdgeS tileType = iota
 	stoneEdgeW tileType = iota
-	log        tileType = iota
+
+	log    tileType = iota
+	grass3 tileType = iota
+	tree   tileType = iota
 )
 
 const (
@@ -73,8 +75,17 @@ func getSprite(spriteSheet pixel.Picture, row, col float64) *pixel.Sprite {
 	minY := row * (tileSize.Y + 1)
 	maxX := minX + tileSize.X + 2
 	maxY := minY + tileSize.Y + 2
+	// fmt.Printf("%f\n%f\n%f\n%f\n\n", minX, minY, maxX, maxY)
 	return pixel.NewSprite(spriteSheet, pixel.R(
 		minX, minY, maxX, maxY,
+	))
+}
+
+// getSpriteC slices the sprite with custom coordinates.
+func getSpriteC(spriteSheet pixel.Picture, x, y, w, h float64) *pixel.Sprite {
+	fmt.Printf("%f\n%f\n%f\n%f\n\n", x, y, x+w, y+h)
+	return pixel.NewSprite(spriteSheet, pixel.R(
+		x, y, x+w, y+h,
 	))
 }
 
@@ -98,7 +109,7 @@ func run() {
 	}
 
 	// Initialize the sprites
-	spriteSheet, err := loadPicture("resources/main_sheet.png")
+	spriteSheet, err := loadPicture("resources/spritesheet.png")
 	if err != nil {
 		panic(err)
 	}
@@ -106,18 +117,21 @@ func run() {
 	var tileSprites [tileTypeCount + 1]*pixel.Sprite // Init slice of all tile sprites
 	tileSprites[grass1] = getSprite(spriteSheet, 2, 4)
 	tileSprites[grass2] = getSprite(spriteSheet, 3, 4)
-	tileSprites[grass3] = getSprite(spriteSheet, 3, 6)
 	tileSprites[stone] = getSprite(spriteSheet, 2, 0)
 	tileSprites[selected] = getSprite(spriteSheet, 0, 0)
 	tileSprites[stoneEdgeN] = getSprite(spriteSheet, 0, 1)
 	tileSprites[stoneEdgeS] = getSprite(spriteSheet, 1, 1)
 	tileSprites[stoneEdgeE] = getSprite(spriteSheet, 2, 1)
 	tileSprites[stoneEdgeW] = getSprite(spriteSheet, 3, 1)
-	tileSprites[log] = getSprite(spriteSheet, 1, 6)
+
+	tileSprites[log] = getSpriteC(spriteSheet, 1, 6, 1, 1)
+	tileSprites[grass3] = getSpriteC(spriteSheet, 1, 6, 1, 1)
+	tileSprites[tree] = getSpriteC(spriteSheet, 448, 0, 70, 127)
 
 	// Initialize the world map to blank tiles
 	for y, _ := range world {
 		for x, _ := range world[y] {
+			// world[y][x] = tileType(rand.Intn(3))
 			r := rand.Intn(3)
 			switch r {
 			case 0:
@@ -127,16 +141,18 @@ func run() {
 				world[y][x] = grass2
 				break
 			case 2:
-				world[y][x] = grass3
+				world[y][x] = grass2
 				break
 			}
 		}
 	}
 
+	// world[2][2] = tree
+
 	// Main loop
 	for !win.Closed() {
 		// Clear the screen
-		win.Clear(colornames.White)
+		win.Clear(colornames.Lightskyblue)
 
 		mouseVec := win.MousePosition() // Get the position of the mouse
 		boardSpaceCell := pixel.V(
@@ -151,13 +167,13 @@ func run() {
 		)
 
 		// Render all of the tiles, y first to add depth
-		for y := 0; y < worldSizeY; y++ {
-			for x := 0; x < worldSizeX; x++ {
+		for x := 0; x < worldSizeX; x++ {
+			for y := 0; y < worldSizeY; y++ {
 				// Map to screen space
 				screenVec := pointToScreenSpace(float64(x), float64(y))
 
 				// Draw the appropriate tile
-				tileSprites[world[x][y]].Draw(
+				tileSprites[world[y][x]].Draw(
 					win,
 					pixel.IM.Scaled(pixel.ZV, 1.0).Moved(screenVec),
 				)
@@ -216,6 +232,7 @@ func run() {
 			}
 		}
 
+		tileSprites[tree].Draw(win, pixel.IM.Moved(win.Bounds().Center()))
 		win.Update() // Update the window
 	}
 }
