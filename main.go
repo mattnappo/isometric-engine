@@ -34,14 +34,14 @@ const (
 )
 
 const (
-	worldSizeX = 10
-	worldSizeY = 10
+	worldSizeX = 18 // Make this even for a good board
+	worldSizeY = worldSizeX
 )
 
 var (
 	worldSize = pixel.V(worldSizeX, worldSizeY)
 	tileSize  = pixel.V(63, 32)
-	origin    = pixel.V(5, 1)
+	origin    = pixel.V(worldSizeX/2, 1)
 	world     [worldSizeX][worldSizeY]tileType
 )
 
@@ -96,8 +96,8 @@ func run() {
 		Bounds: pixel.R(
 			0,
 			0,
-			(worldSizeX+2)*tileSize.X,
-			(worldSizeY)*tileSize.X,
+			(worldSizeX+1)*tileSize.X,
+			(worldSizeY-(worldSizeY/2-1))*tileSize.X,
 		),
 	}
 
@@ -221,12 +221,12 @@ func run() {
 
 				// Change the tiles on mouse click
 				if win.JustPressed(pixelgl.MouseButtonLeft) {
+					fmt.Printf("(%f, %f) clicked\n", cellSpaceCell.X, cellSpaceCell.X)
 					pos := world[int(cellSpaceCell.Y)][int(cellSpaceCell.X)]
 					offset := int(pos) + 1
 					if offset == tileTypeCount+1 {
 						offset = 1
 					}
-					fmt.Printf("offset: %d\n", offset)
 					world[int(cellSpaceCell.Y)][int(cellSpaceCell.X)] = tileType(offset)
 				}
 			}
