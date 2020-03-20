@@ -18,12 +18,11 @@ import (
 type tileType int
 
 const (
-	tileTypeCount = 11
+	tileTypeCount = 10
 
 	grass1     tileType = iota
 	grass2     tileType = iota
 	stone      tileType = iota
-	selected   tileType = iota
 	stoneEdgeN tileType = iota
 	stoneEdgeE tileType = iota
 	stoneEdgeS tileType = iota
@@ -118,32 +117,21 @@ func run() {
 	tileSprites[grass1] = getSprite(spriteSheet, 2, 4)
 	tileSprites[grass2] = getSprite(spriteSheet, 3, 4)
 	tileSprites[stone] = getSprite(spriteSheet, 2, 0)
-	tileSprites[selected] = getSprite(spriteSheet, 0, 0)
 	tileSprites[stoneEdgeN] = getSprite(spriteSheet, 0, 1)
 	tileSprites[stoneEdgeS] = getSprite(spriteSheet, 1, 1)
 	tileSprites[stoneEdgeE] = getSprite(spriteSheet, 2, 1)
 	tileSprites[stoneEdgeW] = getSprite(spriteSheet, 3, 1)
 
-	tileSprites[log] = getSpriteC(spriteSheet, 1, 6, 1, 1)
+	tileSprites[log] = getSpriteC(spriteSheet, 1, 1, 1, 1)
 	tileSprites[grass3] = getSpriteC(spriteSheet, 1, 6, 1, 1)
 	tileSprites[tree] = getSpriteC(spriteSheet, 448, 0, 70, 127)
+
+	selectedSprite := getSprite(spriteSheet, 0, 0)
 
 	// Initialize the world map to blank tiles
 	for y, _ := range world {
 		for x, _ := range world[y] {
-			// world[y][x] = tileType(rand.Intn(3))
-			r := rand.Intn(3)
-			switch r {
-			case 0:
-				world[y][x] = grass1
-				break
-			case 1:
-				world[y][x] = grass2
-				break
-			case 2:
-				world[y][x] = grass2
-				break
-			}
+			world[y][x] = grass1
 		}
 	}
 
@@ -226,10 +214,23 @@ func run() {
 		// Check that the cell is within the board
 		if cellSpaceCell.X >= 0 && cellSpaceCell.X < worldSizeX { // Check x bounds
 			if cellSpaceCell.Y >= 0 && cellSpaceCell.Y < worldSizeY { // Check y bounds
-				tileSprites[selected].Draw(win, pixel.IM.Scaled(pixel.ZV, 1.0).Moved(
+				// Draw the selected tile
+				selectedSprite.Draw(win, pixel.IM.Scaled(pixel.ZV, 1.0).Moved(
 					pointToScreenSpace(cellSpaceCell.X, cellSpaceCell.Y),
-				)) // Draw the highlighted sprite on the cell
+				))
+
+				// Change the tiles on mouse click
+				if win.JustPressed(pixelgl.MouseButtonLeft) {
+					pos := world[int(cellSpaceCell.Y)][int(cellSpaceCell.X)]
+					offset := int(pos) + 1
+					if offset == tileTypeCount+1 {
+						offset = 1
+					}
+					fmt.Printf("offset: %d\n", offset)
+					world[int(cellSpaceCell.Y)][int(cellSpaceCell.X)] = tileType(offset)
+				}
 			}
+
 		}
 
 		tileSprites[tree].Draw(win, pixel.IM.Moved(win.Bounds().Center()))
