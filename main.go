@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"image"
 	_ "image/png"
+	"math/rand"
 	"os"
+	"time"
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/imdraw"
@@ -16,13 +18,18 @@ import (
 type tileType int
 
 const (
-	grass      tileType = iota
+	tileTypeCount = 10
+
+	grass1     tileType = iota
+	grass2     tileType = iota
+	grass3     tileType = iota
 	stone      tileType = iota
 	selected   tileType = iota
 	stoneEdgeN tileType = iota
 	stoneEdgeE tileType = iota
 	stoneEdgeS tileType = iota
 	stoneEdgeW tileType = iota
+	log        tileType = iota
 )
 
 const (
@@ -66,7 +73,6 @@ func getSprite(spriteSheet pixel.Picture, row, col float64) *pixel.Sprite {
 	minY := row * (tileSize.Y + 1)
 	maxX := minX + tileSize.X + 2
 	maxY := minY + tileSize.Y + 2
-	fmt.Printf("minX: %f\nminY: %f\nmaxX: %f\nmaxY: %f\n\n", minX, minY, maxX, maxY)
 	return pixel.NewSprite(spriteSheet, pixel.R(
 		minX, minY, maxX, maxY,
 	))
@@ -92,24 +98,38 @@ func run() {
 	}
 
 	// Initialize the sprites
-	spriteSheet, err := loadPicture("resources/testing.png")
+	spriteSheet, err := loadPicture("resources/main_sheet.png")
 	if err != nil {
 		panic(err)
 	}
 
-	var tileSprites [7]*pixel.Sprite // Init slice of all tile sprites
-	tileSprites[grass] = getSprite(spriteSheet, 2, 4)
-	tileSprites[stone] = getSprite(spriteSheet, 0, 1)
+	var tileSprites [tileTypeCount + 1]*pixel.Sprite // Init slice of all tile sprites
+	tileSprites[grass1] = getSprite(spriteSheet, 2, 4)
+	tileSprites[grass2] = getSprite(spriteSheet, 3, 4)
+	tileSprites[grass3] = getSprite(spriteSheet, 3, 6)
+	tileSprites[stone] = getSprite(spriteSheet, 2, 0)
 	tileSprites[selected] = getSprite(spriteSheet, 0, 0)
 	tileSprites[stoneEdgeN] = getSprite(spriteSheet, 0, 1)
-	tileSprites[stoneEdgeS] = getSprite(spriteSheet, 0, 1)
-	tileSprites[stoneEdgeE] = getSprite(spriteSheet, 0, 1)
-	tileSprites[stoneEdgeW] = getSprite(spriteSheet, 0, 1)
+	tileSprites[stoneEdgeS] = getSprite(spriteSheet, 1, 1)
+	tileSprites[stoneEdgeE] = getSprite(spriteSheet, 2, 1)
+	tileSprites[stoneEdgeW] = getSprite(spriteSheet, 3, 1)
+	tileSprites[log] = getSprite(spriteSheet, 1, 6)
 
 	// Initialize the world map to blank tiles
 	for y, _ := range world {
 		for x, _ := range world[y] {
-			world[y][x] = grass
+			r := rand.Intn(3)
+			switch r {
+			case 0:
+				world[y][x] = grass1
+				break
+			case 1:
+				world[y][x] = grass2
+				break
+			case 2:
+				world[y][x] = grass3
+				break
+			}
 		}
 	}
 
@@ -135,12 +155,12 @@ func run() {
 			for x := 0; x < worldSizeX; x++ {
 				// Map to screen space
 				screenVec := pointToScreenSpace(float64(x), float64(y))
-				switch world[x][y] {
-				case grass:
-					// Draw the grass tile sprite
-					tileSprites[grass].Draw(win, pixel.IM.Moved(screenVec))
-					break
-				}
+
+				// Draw the appropriate tile
+				tileSprites[world[x][y]].Draw(
+					win,
+					pixel.IM.Scaled(pixel.ZV, 1.0).Moved(screenVec),
+				)
 			}
 		}
 
@@ -190,7 +210,7 @@ func run() {
 		// Check that the cell is within the board
 		if cellSpaceCell.X >= 0 && cellSpaceCell.X < worldSizeX { // Check x bounds
 			if cellSpaceCell.Y >= 0 && cellSpaceCell.Y < worldSizeY { // Check y bounds
-				tileSprites[selected].Draw(win, pixel.IM.Moved(
+				tileSprites[selected].Draw(win, pixel.IM.Scaled(pixel.ZV, 1.0).Moved(
 					pointToScreenSpace(cellSpaceCell.X, cellSpaceCell.Y),
 				)) // Draw the highlighted sprite on the cell
 			}
@@ -201,5 +221,7 @@ func run() {
 }
 
 func main() {
+	fmt.Printf("@xoreo's isometric engine\n")
+	rand.Seed(time.Now().UTC().UnixNano())
 	pixelgl.Run(run) // Set the run function = my run function
 }
