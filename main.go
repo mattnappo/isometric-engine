@@ -16,7 +16,6 @@ import (
 type tileType int
 
 const (
-	blank      tileType = iota
 	grass      tileType = iota
 	stone      tileType = iota
 	selected   tileType = iota
@@ -61,6 +60,18 @@ func pointToScreenSpace(x, y float64) pixel.Vec {
 	)
 }
 
+// getSprite slices the sprite sheet and returns the proper sprite.
+func getSprite(spriteSheet pixel.Picture, row, col float64) *pixel.Sprite {
+	minX := col * (tileSize.X + 1)
+	minY := row * (tileSize.Y + 1)
+	maxX := minX + tileSize.X + 2
+	maxY := minY + tileSize.Y + 2
+	fmt.Printf("minX: %f\nminY: %f\nmaxX: %f\nmaxY: %f\n\n", minX, minY, maxX, maxY)
+	return pixel.NewSprite(spriteSheet, pixel.R(
+		minX, minY, maxX, maxY,
+	))
+}
+
 // run is the main game function.
 func run() {
 	// Create the window config
@@ -81,18 +92,19 @@ func run() {
 	}
 
 	// Initialize the sprites
-	spriteSheet, err := loadPicture("resources/spritesheet.png")
+	spriteSheet, err := loadPicture("resources/testing.png")
 	if err != nil {
 		panic(err)
 	}
 
-	var tileSprites [6]*pixel.Sprite
-
-	tileSprites[grass] = pixel.NewSprite(spriteSheet, pixel.R(257, 67, tileSize.X, tileSize.Y))
-	tileSprites[stone] = pixel.NewSprite(spriteSheet, pixel.R(1, 34, tileSize.X, tileSize.Y))
-	tileSprites[selected] = pixel.NewSprite(spriteSheet, pixel.R(
-		1, 1, tileSize.X, tileSize.Y,
-	))
+	var tileSprites [7]*pixel.Sprite // Init slice of all tile sprites
+	tileSprites[grass] = getSprite(spriteSheet, 2, 4)
+	tileSprites[stone] = getSprite(spriteSheet, 0, 1)
+	tileSprites[selected] = getSprite(spriteSheet, 0, 0)
+	tileSprites[stoneEdgeN] = getSprite(spriteSheet, 0, 1)
+	tileSprites[stoneEdgeS] = getSprite(spriteSheet, 0, 1)
+	tileSprites[stoneEdgeE] = getSprite(spriteSheet, 0, 1)
+	tileSprites[stoneEdgeW] = getSprite(spriteSheet, 0, 1)
 
 	// Initialize the world map to blank tiles
 	for y, _ := range world {
@@ -162,7 +174,7 @@ func run() {
 		dBC := (P.X-B.X)*(C.Y-B.Y) - (P.Y-B.Y)*(C.X-B.X)
 		dCD := (P.X-C.X)*(D.Y-C.Y) - (P.Y-C.Y)*(D.X-C.X)
 		dDA := (P.X-D.X)*(A.Y-D.Y) - (P.Y-D.Y)*(A.X-D.X)
-		fmt.Printf("dAB: %f\ndBC: %f\ndCD: %f\ndDA: %f\n\n", dAB, dBC, dCD, dDA)
+		// fmt.Printf("dAB: %f\ndBC: %f\ndCD: %f\ndDA: %f\n\n", dAB, dBC, dCD, dDA)
 
 		// Change the cellSpaceCell accordingly
 		if dAB < 0 { // Bottom left
